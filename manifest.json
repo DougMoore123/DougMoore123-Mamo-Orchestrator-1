@@ -1,0 +1,61 @@
+{
+  "generated_at": "2026-02-04T18:20:55.152943Z",
+  "seed": 42,
+  "description": "Synthetic seed dataset for MAMO (job shop). Use with CR scheduling + risk + policy gates.",
+  "files": {
+    "jobs.csv": {
+      "rows": 200,
+      "columns": [
+        "job_id",
+        "product_family",
+        "quantity",
+        "priority",
+        "priority_weight",
+        "release_date",
+        "due_date",
+        "allowed_overtime_hours"
+      ]
+    },
+    "machines.csv": {
+      "rows": 12,
+      "columns": [
+        "machine_id",
+        "machine_type",
+        "status",
+        "failure_rate_per_hour",
+        "mttr_minutes",
+        "speed_factor",
+        "shift_capacity_hours"
+      ]
+    },
+    "operations.csv": {
+      "rows": 714,
+      "columns": [
+        "job_id",
+        "op_seq",
+        "machine_type",
+        "process_time_minutes",
+        "setup_time_minutes"
+      ]
+    },
+    "parts_suppliers.csv": {
+      "rows": 40,
+      "columns": [
+        "part_id",
+        "supplier_id",
+        "lead_time_mean_days",
+        "lead_time_std_days",
+        "supplier_risk_rating",
+        "unit_cost_usd"
+      ]
+    },
+    "job_parts.csv": {
+      "rows": 375,
+      "columns": [
+        "job_id",
+        "part_id",
+        "units_required"
+      ]
+    }
+  }
+}

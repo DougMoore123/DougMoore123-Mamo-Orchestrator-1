@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+venv/
+
+# Conda env (project-local)
+.conda/
+
+# Environment files
+.env
+
+# Artifacts
+artifacts/
+
+# OS
+.DS_Store
