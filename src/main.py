@@ -5,6 +5,7 @@ import json
 import logging
 from datetime import datetime
 
+from .agent import AgentContext, Tool, run_agent
 from .clients import create_client
 from .config import load_settings
 from .data import (
@@ -62,28 +63,58 @@ def main() -> None:
     docs += row_docs(data.job_parts, "job_parts", max_rows=5000)
 
     index = build_index(client, settings.embed_model, docs)
-    evidence = "\n".join(
-        rag_query(
-            client,
-            settings.embed_model,
-            index,
-            docs,
-            "M004 down replan next shift CR top jobs machine availability supplier risk",
-            k=12,
-        )
+
+    def tool_get_cr_table(_: dict) -> str:
+        return cr_table_csv
+
+    def tool_get_available_machines(_: dict) -> str:
+        return machine_table_csv
+
+    def tool_rag_search(args: dict) -> str:
+        query = args.get("query", "")
+        k = int(args.get("k", 10))
+        return "\n".join(rag_query(client, settings.embed_model, index, docs, query, k=k))
+
+    tools = [
+        Tool(
+            name="get_cr_table",
+            description="Return the current CR table for next jobs.",
+            parameters={"type": "object", "properties": {}},
+            handler=tool_get_cr_table,
+        ),
+        Tool(
+            name="get_available_machines",
+            description="Return available machines for the next shift.",
+            parameters={"type": "object", "properties": {}},
+            handler=tool_get_available_machines,
+        ),
+        Tool(
+            name="rag_search",
+            description="Search indexed documents for evidence.",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string"},
+                    "k": {"type": "integer", "default": 10},
+                },
+                "required": ["query"],
+            },
+            handler=tool_rag_search,
+        ),
+    ]
+
+    trace: list[dict] = []
+    ctx = AgentContext(
+        client=client,
+        chat_model=settings.chat_model,
+        tools=tools,
+        system_prompt=SYSTEM_PROMPT,
+        max_steps=6,
+        trace=trace,
     )
 
-    prompt = build_prompt(cr_table_csv, machine_table_csv, evidence)
-
-    resp = client.chat.completions.create(
-        model=settings.chat_model,
-        messages=[{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": prompt}],
-        temperature=0.2,
-        max_completion_tokens=1200,
-    )
-
-    out = resp.choices[0].message.content
-    logging.info("Model response received.")
+    out = run_agent(ctx, USER_QUESTION)
+    logging.info("Agent response received.")
     print(out)
 
     artifacts_dir = base_dir / "artifacts" / "audit_logs"
@@ -91,10 +122,16 @@ def main() -> None:
 
     ts = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
     audit_path = artifacts_dir / f"incident_{ts}.json"
+    payload = out if out.strip().startswith("{") else json.dumps({"raw": out}, indent=2)
     with open(audit_path, "w", encoding="utf-8") as f:
-        f.write(out if out.strip().startswith("{") else json.dumps({"raw": out}, indent=2))
+        f.write(payload)
+
+    trace_path = artifacts_dir / f"trace_{ts}.json"
+    with open(trace_path, "w", encoding="utf-8") as f:
+        json.dump(trace, f, indent=2)
 
     logging.info("Saved audit log: %s", audit_path)
+    logging.info("Saved tool trace: %s", trace_path)
 
 
 if __name__ == "__main__":

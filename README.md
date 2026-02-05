@@ -1,15 +1,35 @@
 # MAMO Seed Dataset Orchestrator
 
-![CI](https://github.com/DougMoore123/mamo-orchestrator/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/DougMoore123/DougMoore123-Mamo-Orchestrator-/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
 
-A lightweight manufacturing orchestration demo that computes a critical-ratio schedule, enriches with supplier risk, builds a simple RAG index, and produces a JSON-only response.
+A manufacturing orchestration agent that plans next-shift schedules using critical-ratio prioritization, supplier-risk data, and tool-calling RAG evidence to produce JSON actions.
 
 ## Highlights
 
 - Critical ratio (CR) prioritization with supplier risk enrichment
-- Simple RAG index over operational datasets
+- Tool-calling agent loop with trace logging
+- RAG evidence over operational datasets
 - JSON-only response for deterministic downstream automation
+
+## Architecture
+
+```mermaid
+flowchart LR
+	A[CSV Data] --> B[CR + Risk Enrichment]
+	B --> C[Tool: get_cr_table]
+	A --> D[Document Builder]
+	D --> E[Embeddings]
+	E --> F[Vector Index]
+	F --> G[Tool: rag_search]
+	A --> H[Machines Status]
+	H --> I[Tool: get_available_machines]
+	C --> J[Agent Loop]
+	G --> J
+	I --> J
+	J --> K[JSON Decision Output]
+	J --> L[Trace Logs]
+```
 
 ## Setup
 
