@@ -52,6 +52,8 @@ Required environment variables:
 - `AZURE_OPENAI_EMBED_MODEL`
 - `AZURE_OPENAI_API_VERSION` (optional)
 
+Optional: If you want to skip RAG/embeddings, you can disable the RAG tools in `src/main.py` and run with only the CR/machine tools.
+
 ## Run
 
 ```bash
